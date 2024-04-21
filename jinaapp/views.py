@@ -15,6 +15,45 @@ import io
 from io import BytesIO
 import base64
 from django.shortcuts import render
+from rest_framework import viewsets
+from .serializers import JinabaseSerializer
+from .models import JinaBase
+from rest_framework.response import Response
+from rest_framework.decorators import action
+# Django administration
+# username: roaa
+# password: jvao.123456789
+
+class JinabaseViewSet(viewsets.ModelViewSet):
+    queryset = JinaBase.objects.all()
+    serializer_class = JinabaseSerializer
+
+    @action(detail=False, methods=['post'])
+    def plot_data(self, request):
+        x_column = request.data.get('xColumn')
+        y_column = request.data.get('yColumn')
+
+        if x_column and y_column:
+            csv_file_path = "jinaapp/static/jinaapp/JINAbase2021_RA_DEC_deg.csv"
+            df = pd.read_csv(csv_file_path)
+
+            fig, ax = plt.subplots(figsize=(10, 5))
+            ax.set_facecolor("#F5F5F5")
+
+            plt.xlabel(x_column, fontsize=20, color='#64467C', fontweight='bold')
+            plt.ylabel(y_column, fontsize=20, color='#64467C', fontweight='bold')
+
+            plot_dynamic_condition(ax, df, x_column, y_column, condition_x='<', condition_y='<', marker='o', color='orange')
+            
+            # Get the graph as base64 encoded string
+            graph = get_graph(fig)
+            plt.close(fig)
+
+            return Response({'graph': graph})
+        else:
+            return Response({'error': 'Please select both X and Y columns.'}, status=400)
+
+
 
 def index(request):
     return render(request, 'jinaapp/index.html')

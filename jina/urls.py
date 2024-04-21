@@ -15,8 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework import routers
+from jinaapp.views import JinabaseViewSet
+
+router = routers.DefaultRouter()
+router.register('jinabase', JinabaseViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('jinaapp.urls')),
+    path('', include(router.urls)),
 ]
