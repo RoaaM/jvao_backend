@@ -55,6 +55,47 @@ class JinabaseViewSet(viewsets.ModelViewSet):
 
 
 
+    @action(detail=False, methods=['post'])
+    def show_table(self, request):
+        x_column = request.data.get('xColumn')
+        y_column = request.data.get('yColumn')
+
+        if x_column and y_column:
+            csv_file_path = "jinaapp/static/jinaapp/JINAbase2021_RA_DEC_deg.csv"
+            df = pd.read_csv(csv_file_path)
+
+            # Remove "<" sign from columns and replace empty strings with NaN
+            df[x_column] = df[x_column].str[1:].replace('', np.nan).astype(float)
+            df[y_column] = df[y_column].str[1:].replace('', np.nan).astype(float)
+
+            # Filter rows with missing values after conversion
+            df.dropna(subset=[x_column, y_column], inplace=True)
+
+            # Filter data based on x and y columns
+            filtered_df = df[(df[x_column] < 10) & (df[y_column] < 20)]  # Example filtering condition
+
+            # Convert filtered DataFrame to list of dictionaries
+            table_data = filtered_df.to_dict(orient='records')
+
+            # Replace out-of-range float values with a placeholder
+            for record in table_data:
+                for key, value in record.items():
+                    if isinstance(value, float) and (np.isnan(value) or np.isinf(value)):
+                        record[key] = 'NaN'  # Placeholder value for out-of-range float values
+
+            return Response({'table_data': table_data})
+        else:
+            return Response({'error': 'Please select both X and Y columns.'}, status=400)
+
+
+
+
+
+
+
+
+        
+
 def index(request):
     return render(request, 'jinaapp/index.html')
 
